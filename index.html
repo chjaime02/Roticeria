@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Armá tu Sándwich</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: cartel de rotisería arriba, lista de sándwiches que se despliegan, pedido al final */
+:root{
+  --bg:#F4F3EE; --surface:#FFFFFF; --ink:#22201C; --muted:#6B675E; --line:#DEDBD2;
+  --tomato:#C63A22; --mustard:#E3A61C; --lettuce:#3F7D3A; --chip:#F0EEE6;
+  --display:"Alfa Slab One", Georgia, serif; --body:"Figtree", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1A1916; --surface:#24221E; --ink:#F1EEE6; --muted:#A9A398; --line:#3A372F;
+  --tomato:#E5603F; --mustard:#EDB93A; --lettuce:#6FB063; --chip:#2E2B25; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1A1916; --surface:#24221E; --ink:#F1EEE6; --muted:#A9A398; --line:#3A372F;
+  --tomato:#E5603F; --mustard:#EDB93A; --lettuce:#6FB063; --chip:#2E2B25; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px;display:flex;flex-direction:column;gap:28px}
+header{display:flex;flex-direction:column;gap:6px}
+.sign{font-family:var(--display);font-size:clamp(2rem,7vw,3rem);line-height:1.05;color:var(--tomato);margin:0;text-wrap:balance}
+.sign span{color:var(--mustard)}
+.biz{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+header p{margin:0;color:var(--muted);max-width:60ch}
+h2{font-family:var(--display);font-weight:400;font-size:1.35rem;margin:0}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.item.open{border-color:var(--mustard)}
+.head{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:14px;padding:16px;cursor:pointer}
+.head:focus-visible{outline:3px solid var(--mustard);outline-offset:-3px}
+.head .t{flex:1;min-width:0}
+.head strong{display:block;font-size:1.08rem}
+.head small{color:var(--muted);font-size:.9rem}
+.chev{width:28px;height:28px;border-radius:50%;background:var(--chip);display:grid;place-items:center;transition:transform .2s;flex:none}
+.item.open .chev{transform:rotate(180deg)}
+.panel{padding:4px 16px 18px;display:flex;flex-direction:column;gap:16px;border-top:1px dashed var(--line)}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+legend{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--muted);padding:12px 0 6px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt span{display:inline-block;padding:7px 13px;border-radius:999px;background:var(--chip);border:1.5px solid transparent;cursor:pointer;font-weight:500;font-size:.95rem;user-select:none}
+.opt input:checked+span{background:var(--lettuce);color:#fff;border-color:var(--lettuce)}
+.opt input[type=radio]:checked+span{background:var(--mustard);color:#22201C;border-color:var(--mustard)}
+.opt input:focus-visible+span{outline:3px solid var(--tomato);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between}
+.qty{display:flex;align-items:center;gap:4px;background:var(--chip);border-radius:999px;padding:3px}
+.qty button{all:unset;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;cursor:pointer;font-weight:700;font-size:1.1rem}
+.qty button:hover{background:var(--line)}
+.qty button:focus-visible{outline:2px solid var(--tomato)}
+.qty output{min-width:2ch;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.btn{all:unset;box-sizing:border-box;cursor:pointer;background:var(--tomato);color:#fff;font-weight:700;padding:11px 20px;border-radius:8px;text-align:center}
+.btn:hover{filter:brightness(1.07)}
+.btn:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+textarea,input[type=text]{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+textarea:focus,input[type=text]:focus{outline:2px solid var(--mustard);border-color:transparent}
+.order{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.order ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.order li{display:flex;gap:12px;align-items:flex-start;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.order li .d{flex:1;min-width:0}
+.order li .d b{display:block}
+.order li .d span{color:var(--muted);font-size:.92rem}
+.x{all:unset;cursor:pointer;color:var(--tomato);font-weight:600;font-size:.9rem}
+.x:focus-visible{outline:2px solid var(--tomato)}
+.empty{color:var(--muted);margin:0}
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92rem}
+.ticket{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:.88rem;background:var(--chip);padding:14px;border-radius:8px;margin:0;user-select:all;overflow-x:auto}
+.note{font-size:.88rem;color:var(--muted);margin:0}
+.toast{color:var(--lettuce);font-weight:600;font-size:.9rem}
+@media (prefers-reduced-motion:reduce){.chev{transition:none}}
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="biz">Nombre de tu rotisería</div>
+    <h1 class="sign">Armá tu <span>sándwich</span></h1>
+    <p>Elegí un sándwich, tocalo para armarlo a tu gusto y sumalo al pedido.</p>
+  </header>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <h2>Sándwiches</h2>
+    <div class="list" id="list"></div>
+  </section>
+
+  <section class="order" aria-live="polite">
+    <h2>Tu pedido</h2>
+    <ul id="cart"></ul>
+    <p class="empty" id="empty">Todavía no agregaste nada.</p>
+    <div id="checkout" hidden style="display:flex;flex-direction:column;gap:12px">
+      <label class="f" for="cname">Tu nombre
+        <input type="text" id="cname" placeholder="¿A nombre de quién?">
+      </label>
+      <label class="f" for="cnote">Aclaraciones
+        <textarea id="cnote" rows="2" placeholder="Ej.: lo paso a buscar a las 13 h"></textarea>
+      </label>
+      <button class="btn" id="make">Encargar</button>
+    </div>
+    <div id="done" hidden style="display:flex;flex-direction:column;gap:10px">
+      <p class="note">Copiá este pedido y mandalo por WhatsApp o mensaje a la rotisería.</p>
+      <pre class="ticket" id="ticket"></pre>
+      <div class="row" style="justify-content:flex-start">
+        <button class="btn" id="copy">Copiar pedido</button>
+        <button class="btn ghost" id="reset">Hacer otro pedido</button>
+        <span class="toast" id="toast"></span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const SANDWICHES=[
+  {id:"mila",name:"Milanesa",desc:"Milanesa de carne"},
+  {id:"lomo",name:"Lomito",desc:"Lomo a la plancha"},
+  {id:"pollo",name:"Pollo",desc:"Pechuga grillada"},
+  {id:"jyq",name:"Jamón y queso",desc:"Jamón cocido y queso"},
+  {id:"vege",name:"Vegetariano",desc:"Vegetales grillados"}
+];
+const PANES=["Francés","Árabe","Integral"];
+const AGREGADOS=["Lechuga","Tomate","Huevo","Mayonesa","Ketchup","Mostaza"];
+const list=document.getElementById("list"),cart=[];
+const chev='<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+SANDWICHES.forEach(s=>{
+  const el=document.createElement("div");el.className="item";
+  el.innerHTML=`
+  <button class="head" aria-expanded="false" aria-controls="p-${s.id}">
+    <span class="t"><strong>${s.name}</strong><small>${s.desc}</small></span><span class="chev">${chev}</span>
+  </button>
+  <div class="panel" id="p-${s.id}" hidden>
+    <fieldset><legend>Pan</legend><div class="opts">
+      ${PANES.map((p,i)=>`<label class="opt"><input type="radio" name="pan-${s.id}" id="pan-${s.id}-${i}" value="${p}" ${i?"":"checked"}><span>${p}</span></label>`).join("")}
+    </div></fieldset>
+    <fieldset><legend>Agregados</legend><div class="opts">
+      ${AGREGADOS.map((a,i)=>`<label class="opt"><input type="checkbox" id="ag-${s.id}-${i}" value="${a}"><span>${a}</span></label>`).join("")}
+    </div></fieldset>
+    <div class="row">
+      <div class="qty"><button type="button" data-d="-1" aria-label="Uno menos">−</button><output>1</output><button type="button" data-d="1" aria-label="Uno más">+</button></div>
+      <button class="btn add">Agregar al pedido</button>
+    </div>
+  </div>`;
+  const head=el.querySelector(".head"),panel=el.querySelector(".panel"),out=el.querySelector("output");
+  head.onclick=()=>{const o=panel.hidden;panel.hidden=!o;el.classList.toggle("open",o);head.setAttribute("aria-expanded",o)};
+  el.querySelectorAll(".qty button").forEach(b=>b.onclick=()=>{out.value=Math.max(1,Math.min(20,+out.value+ +b.dataset.d))});
+  el.querySelector(".add").onclick=()=>{
+    const pan=el.querySelector(`input[name="pan-${s.id}"]:checked`).value;
+    const ags=[...el.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.value);
+    cart.push({name:s.name,pan,ags,qty:+out.value});
+    el.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);out.value=1;
+    head.click();render();
+  };
+  list.appendChild(el);
+});
+
+function render(){
+  const ul=document.getElementById("cart");ul.innerHTML="";
+  cart.forEach((c,i)=>{
+    const li=document.createElement("li");
+    li.innerHTML=`<div class="d"><b>${c.qty} × ${c.name}</b><span>Pan ${c.pan.toLowerCase()} · ${c.ags.length?c.ags.join(", "):"sin agregados"}</span></div><button class="x">Quitar</button>`;
+    li.querySelector(".x").onclick=()=>{cart.splice(i,1);render()};
+    ul.appendChild(li);
+  });
+  document.getElementById("empty").hidden=cart.length>0;
+  document.getElementById("checkout").hidden=cart.length===0||!document.getElementById("done").hidden;
+}
+
+document.getElementById("make").onclick=()=>{
+  const n=document.getElementById("cname").value.trim(),note=document.getElementById("cnote").value.trim();
+  let t="Hola! Quiero encargar:\n";
+  cart.forEach(c=>t+=`- ${c.qty} x ${c.name} (pan ${c.pan.toLowerCase()}): ${c.ags.length?c.ags.join(", "):"sin agregados"}\n`);
+  if(note)t+=`\nAclaraciones: ${note}\n`;
+  if(n)t+=`\nA nombre de: ${n}`;
+  document.getElementById("ticket").textContent=t.trim();
+  document.getElementById("done").hidden=false;document.getElementById("checkout").hidden=true;
+};
+document.getElementById("copy").onclick=()=>{
+  const t=document.getElementById("ticket"),toast=document.getElementById("toast");
+  const sel=()=>{const r=document.createRange();r.selectNodeContents(t);const s=getSelection();s.removeAllRanges();s.addRange(r);toast.textContent="Seleccionado, copialo con tu teclado"};
+  try{navigator.clipboard.writeText(t.textContent).then(()=>toast.textContent="Copiado",sel)}catch(e){sel()}
+};
+document.getElementById("reset").onclick=()=>{cart.length=0;document.getElementById("done").hidden=true;document.getElementById("toast").textContent="";render()};
+render();
+</script>
+</body>
+</html>
