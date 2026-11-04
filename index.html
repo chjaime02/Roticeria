@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Armá tu Sándwich</title>
+<title>San dwichaso</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
@@ -56,6 +56,7 @@ legend{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;font-weight
 .btn{all:unset;box-sizing:border-box;cursor:pointer;background:var(--tomato);color:#fff;font-weight:700;padding:11px 20px;border-radius:8px;text-align:center}
 .btn:hover{filter:brightness(1.07)}
 .btn:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+.btn.wa{background:#1F8F4E}
 .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
 textarea,input[type=text]{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 textarea:focus,input[type=text]:focus{outline:2px solid var(--mustard);border-color:transparent}
@@ -80,7 +81,7 @@ label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92
 
 <div class="wrap">
   <header>
-    <div class="biz">Nombre de tu rotisería</div>
+    <div class="biz">San dwichaso</div>
     <h1 class="sign">Armá tu <span>sándwich</span></h1>
     <p>Elegí un sándwich, tocalo para armarlo a tu gusto y sumalo al pedido.</p>
   </header>
@@ -104,10 +105,11 @@ label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92
       <button class="btn" id="make">Encargar</button>
     </div>
     <div id="done" hidden style="display:flex;flex-direction:column;gap:10px">
-      <p class="note">Copiá este pedido y mandalo por WhatsApp o mensaje a la rotisería.</p>
+      <p class="note">Revisá tu pedido y mandalo por WhatsApp a San dwichaso.</p>
       <pre class="ticket" id="ticket"></pre>
       <div class="row" style="justify-content:flex-start">
-        <button class="btn" id="copy">Copiar pedido</button>
+        <a class="btn wa" id="wa" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+        <button class="btn ghost" id="copy">Copiar pedido</button>
         <button class="btn ghost" id="reset">Hacer otro pedido</button>
         <span class="toast" id="toast"></span>
       </div>
@@ -116,6 +118,7 @@ label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92
 </div>
 
 <script>
+const WHATSAPP="5493525448648"; // +54 9 3525 44-8648
 const SANDWICHES=[
   {id:"mila",name:"Milanesa",desc:"Milanesa de carne"},
   {id:"lomo",name:"Lomito",desc:"Lomo a la plancha"},
@@ -178,6 +181,7 @@ document.getElementById("make").onclick=()=>{
   if(note)t+=`\nAclaraciones: ${note}\n`;
   if(n)t+=`\nA nombre de: ${n}`;
   document.getElementById("ticket").textContent=t.trim();
+  document.getElementById("wa").href="https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(t.trim());
   document.getElementById("done").hidden=false;document.getElementById("checkout").hidden=true;
 };
 document.getElementById("copy").onclick=()=>{
