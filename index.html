@@ -65,7 +65,14 @@ textarea:focus,input[type=text]:focus{outline:2px solid var(--mustard);border-co
 .order{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px}
 .order ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
 .order li{display:flex;gap:12px;align-items:flex-start;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.order li{align-items:center}
 .order li .d{flex:1;min-width:0}
+.mini{all:unset;box-sizing:border-box;flex:none;width:104px;border-radius:10px;background:var(--chip);cursor:pointer;display:block}
+.mini:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+.mini svg{display:block;width:100%;height:auto;overflow:hidden}
+.mini .drop.in{animation-duration:.5s}
+.order li.new{animation:slidein .35s ease-out both}
+@keyframes slidein{from{opacity:0;transform:translateY(-8px)}}
 .order li .d b{display:block}
 .order li .d span{color:var(--muted);font-size:.92rem}
 .x{all:unset;cursor:pointer;color:var(--tomato);font-weight:600;font-size:.9rem}
@@ -101,7 +108,7 @@ label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92
 }
 @media (prefers-reduced-motion:reduce){
   .chev,.layer,#ghost{transition:none}
-  .drop.in,.drop.out,#stack.sent{animation-duration:1ms!important;animation-delay:0s!important}
+  .drop.in,.drop.out,#stack.sent,.order li.new{animation-duration:1ms!important;animation-delay:0s!important}
 }
 </style>
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
@@ -249,6 +256,27 @@ function drawSandwich(st){
     d.addEventListener("animationend",()=>{d.classList.remove("in");d.style.animationDelay=""},{once:true})});
   ghost.style.opacity=L.length?0:"";
 }
+/* Mini sándwich animado para cada ítem del pedido */
+function miniSandwich(st,animate){
+  const svg=document.createElementNS(NS,"svg");
+  svg.setAttribute("viewBox","0 80 300 205");svg.setAttribute("aria-hidden","true");
+  let html=`<ellipse cx="150" cy="266" rx="138" ry="13" style="fill:var(--surface);stroke:var(--line);stroke-width:2"/>`,y=BASE;
+  plan(st).forEach((l,i)=>{
+    y-=l.h;
+    const delay=animate?` style="animation-delay:${350+i*110}ms"`:"";
+    html+=`<g transform="translate(0 ${y})"><g class="drop${animate?" in":""}"${delay}>${DRAW[l.t](l.p)}</g></g>`;
+    y+=1;
+  });
+  svg.innerHTML=html;
+  return svg;
+}
+function replay(svg){
+  const ds=[...svg.querySelectorAll(".drop")];
+  ds.forEach((d,i)=>{d.classList.remove("in");d.style.animationDelay=i*110+"ms"});
+  svg.getBoundingClientRect();
+  ds.forEach(d=>d.classList.add("in"));
+}
+
 function sendOff(){
   if(!layers.size)return;
   sending=true;stack.classList.add("sent");
@@ -301,7 +329,7 @@ SANDWICHES.forEach(s=>{
   el.querySelectorAll(".qty button").forEach(b=>b.onclick=()=>{out.value=Math.max(1,Math.min(20,+out.value+ +b.dataset.d))});
   el.querySelector(".add").onclick=()=>{
     const st=stateOf(el,s);
-    cart.push({name:s.name,pan:st.pan,ags:st.ags,qty:+out.value});
+    cart.push({id:s.id,name:s.name,pan:st.pan,ags:st.ags,qty:+out.value,fresh:true});
     if(active&&active.el===el)sendOff();
     el.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);out.value=1;
     head.click();render();
@@ -314,7 +342,11 @@ function render(){
   const ul=document.getElementById("cart");ul.innerHTML="";
   cart.forEach((c,i)=>{
     const li=document.createElement("li");
-    li.innerHTML=`<div class="d"><b>${c.qty} × ${c.name}</b><span>Pan ${c.pan.toLowerCase()} · ${c.ags.length?c.ags.join(", "):"sin agregados"}</span></div><button class="x">Quitar</button>`;
+    li.innerHTML=`<button class="mini" title="Tocá para verlo armarse de nuevo" aria-label="Ver cómo se arma: ${c.name}"></button><div class="d"><b>${c.qty} × ${c.name}</b><span>Pan ${c.pan.toLowerCase()} · ${c.ags.length?c.ags.join(", "):"sin agregados"}</span></div><button class="x">Quitar</button>`;
+    const mini=li.querySelector(".mini"),svg=miniSandwich(c,c.fresh);
+    mini.appendChild(svg);mini.onclick=()=>replay(svg);
+    if(c.fresh)li.classList.add("new");
+    c.fresh=false;
     li.querySelector(".x").onclick=()=>{cart.splice(i,1);render()};
     ul.appendChild(li);
   });
