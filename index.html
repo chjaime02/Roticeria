@@ -7,7 +7,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: cartel de rotisería arriba, lista de sándwiches que se despliegan, pedido al final */
+/* Layout: cartel arriba; a la izquierda la lista de sándwiches y el pedido; a la derecha el sándwich que se va armando */
 :root{
   --bg:#F4F3EE; --surface:#FFFFFF; --ink:#22201C; --muted:#6B675E; --line:#DEDBD2;
   --tomato:#C63A22; --mustard:#E3A61C; --lettuce:#3F7D3A; --chip:#F0EEE6;
@@ -21,13 +21,15 @@
   --tomato:#E5603F; --mustard:#EDB93A; --lettuce:#6FB063; --chip:#2E2B25; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
-.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px;display:flex;flex-direction:column;gap:28px}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px;display:flex;flex-direction:column;gap:28px}
 header{display:flex;flex-direction:column;gap:6px}
 .sign{font-family:var(--display);font-size:clamp(2rem,7vw,3rem);line-height:1.05;color:var(--tomato);margin:0;text-wrap:balance}
 .sign span{color:var(--mustard)}
 .biz{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
 header p{margin:0;color:var(--muted);max-width:60ch}
 h2{font-family:var(--display);font-weight:400;font-size:1.35rem;margin:0}
+.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,380px);gap:28px;align-items:start}
+.col{display:flex;flex-direction:column;gap:28px;min-width:0}
 .list{display:flex;flex-direction:column;gap:10px}
 .item{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .item.open{border-color:var(--mustard)}
@@ -73,7 +75,34 @@ label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92
 .ticket{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-size:.88rem;background:var(--chip);padding:14px;border-radius:8px;margin:0;user-select:all;overflow-x:auto}
 .note{font-size:.88rem;color:var(--muted);margin:0}
 .toast{color:var(--lettuce);font-weight:600;font-size:.9rem}
-@media (prefers-reduced-motion:reduce){.chev{transition:none}}
+
+/* Vista previa: el sándwich se arma capa por capa */
+.preview{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px}
+.pv-label{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+#sv{width:100%;height:auto;display:block;overflow:hidden}
+.pv-cap{min-width:0}
+.pv-cap strong{display:block;font-family:var(--display);font-weight:400;font-size:1.3rem;line-height:1.2}
+.pv-cap span{display:block;color:var(--muted);font-size:.92rem}
+.layer{transition:transform .45s cubic-bezier(.34,1.45,.55,1)}
+.drop.in{animation:drop .6s cubic-bezier(.3,.9,.4,1.15) both}
+.drop.out{animation:out .3s ease-in forwards}
+@keyframes drop{0%{transform:translateY(-260px);opacity:0}15%{opacity:1}70%{transform:translateY(5px)}85%{transform:translateY(-2px)}100%{transform:none;opacity:1}}
+@keyframes out{to{transform:translateY(-30px);opacity:0}}
+#stack{transform-box:fill-box;transform-origin:center}
+#stack.sent{animation:sent .55s ease-in forwards}
+@keyframes sent{30%{transform:translateY(-10px)}100%{transform:translate(170px,-40px) scale(.35);opacity:0}}
+#ghost{transition:opacity .3s}
+
+@media (max-width:820px){
+  .main{grid-template-columns:1fr}
+  .preview{order:-1;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:5;flex-direction:row;align-items:center;gap:12px;padding:8px 14px;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+  .pv-label{display:none}
+  #sv{width:45%;max-width:190px;flex:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .chev,.layer,#ghost{transition:none}
+  .drop.in,.drop.out,#stack.sent{animation-duration:1ms!important;animation-delay:0s!important}
+}
 </style>
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
 </head>
@@ -86,35 +115,55 @@ label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:.92
     <p>Elegí un sándwich, tocalo para armarlo a tu gusto y sumalo al pedido.</p>
   </header>
 
-  <section style="display:flex;flex-direction:column;gap:12px">
-    <h2>Sándwiches</h2>
-    <div class="list" id="list"></div>
-  </section>
+  <div class="main">
+    <div class="col">
+      <section style="display:flex;flex-direction:column;gap:12px">
+        <h2>Sándwiches</h2>
+        <div class="list" id="list"></div>
+      </section>
 
-  <section class="order" aria-live="polite">
-    <h2>Tu pedido</h2>
-    <ul id="cart"></ul>
-    <p class="empty" id="empty">Todavía no agregaste nada.</p>
-    <div id="checkout" hidden style="display:flex;flex-direction:column;gap:12px">
-      <label class="f" for="cname">Tu nombre
-        <input type="text" id="cname" placeholder="¿A nombre de quién?">
-      </label>
-      <label class="f" for="cnote">Aclaraciones
-        <textarea id="cnote" rows="2" placeholder="Ej.: lo paso a buscar a las 13 h"></textarea>
-      </label>
-      <button class="btn" id="make">Encargar</button>
+      <section class="order" aria-live="polite">
+        <h2>Tu pedido</h2>
+        <ul id="cart"></ul>
+        <p class="empty" id="empty">Todavía no agregaste nada.</p>
+        <div id="checkout" hidden style="display:flex;flex-direction:column;gap:12px">
+          <label class="f" for="cname">Tu nombre
+            <input type="text" id="cname" placeholder="¿A nombre de quién?">
+          </label>
+          <label class="f" for="cnote">Aclaraciones
+            <textarea id="cnote" rows="2" placeholder="Ej.: lo paso a buscar a las 13 h"></textarea>
+          </label>
+          <button class="btn" id="make">Encargar</button>
+        </div>
+        <div id="done" hidden style="display:flex;flex-direction:column;gap:10px">
+          <p class="note">Revisá tu pedido y mandalo por WhatsApp a San dwichaso.</p>
+          <pre class="ticket" id="ticket"></pre>
+          <div class="row" style="justify-content:flex-start">
+            <a class="btn wa" id="wa" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+            <button class="btn ghost" id="copy">Copiar pedido</button>
+            <button class="btn ghost" id="reset">Hacer otro pedido</button>
+            <span class="toast" id="toast"></span>
+          </div>
+        </div>
+      </section>
     </div>
-    <div id="done" hidden style="display:flex;flex-direction:column;gap:10px">
-      <p class="note">Revisá tu pedido y mandalo por WhatsApp a San dwichaso.</p>
-      <pre class="ticket" id="ticket"></pre>
-      <div class="row" style="justify-content:flex-start">
-        <a class="btn wa" id="wa" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
-        <button class="btn ghost" id="copy">Copiar pedido</button>
-        <button class="btn ghost" id="reset">Hacer otro pedido</button>
-        <span class="toast" id="toast"></span>
+
+    <aside class="preview" aria-live="polite">
+      <div class="pv-label">Tu sándwich</div>
+      <svg id="sv" viewBox="0 80 300 205" role="img" aria-label="Todavía no elegiste un sándwich">
+        <ellipse cx="150" cy="266" rx="138" ry="13" style="fill:var(--chip);stroke:var(--line);stroke-width:1.5"/>
+        <g id="ghost" style="fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:6 6;opacity:.6">
+          <path d="M40 238 H260 Q266 238 265 246 Q262 262 240 262 H60 Q38 262 35 246 Q34 238 40 238Z"/>
+          <path d="M38 230 Q34 188 150 186 Q266 188 262 230Z"/>
+        </g>
+        <g id="stack"></g>
+      </svg>
+      <div class="pv-cap">
+        <strong id="pvName">Elegí un sándwich</strong>
+        <span id="pvMeta">Tocá uno de la lista y miralo armarse acá.</span>
       </div>
-    </div>
-  </section>
+    </aside>
+  </div>
 </div>
 
 <script>
@@ -130,6 +179,97 @@ const PANES=["Francés","Árabe","Integral"];
 const AGREGADOS=["Lechuga","Tomate","Huevo","Mayonesa","Ketchup","Mostaza"];
 const list=document.getElementById("list"),cart=[];
 const chev='<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+/* ---------- Sándwich en SVG ---------- */
+const NS="http://www.w3.org/2000/svg",BASE=262;
+const stack=document.getElementById("stack"),ghost=document.getElementById("ghost"),sv=document.getElementById("sv");
+const layers=new Map();let sending=false,current=null;
+const BUN={"Francés":{c:"#D89B4F",k:"#F3D7A1",d:"#B47634"},"Árabe":{c:"#E8CB8F",k:"#F6E4BC",d:"#C9A466"},"Integral":{c:"#946238",k:"#C79A6A",d:"#6E4425"}};
+const R=(s,n)=>s.repeat(n);
+const seeds=(pts)=>pts.map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="2.6" ry="1.4" fill="#F1DFB8"/>`).join("");
+const pita=b=>`<rect x="32" y="0" width="236" height="12" rx="6" fill="${b.c}"/><circle cx="80" cy="5" r="2.5" fill="${b.d}" opacity=".5"/><circle cx="150" cy="7" r="3" fill="${b.d}" opacity=".5"/><circle cx="215" cy="4" r="2.2" fill="${b.d}" opacity=".5"/>`;
+const DRAW={
+  panB:p=>{const b=BUN[p];if(p==="Árabe")return pita(b);
+    return `<path d="M40 0 H260 Q266 0 265 8 Q262 24 240 24 H60 Q38 24 35 8 Q34 0 40 0Z" fill="${b.c}"/><rect x="40" y="0" width="220" height="6" rx="3" fill="${b.k}"/>`+(p==="Integral"?seeds([[70,15],[120,17],[175,14],[225,16]]):"")},
+  panT:p=>{const b=BUN[p];if(p==="Árabe")return pita(b);
+    let s=`<path d="M38 46 Q34 4 150 2 Q266 4 262 46Z" fill="${b.c}"/><rect x="40" y="40" width="220" height="6" rx="3" fill="${b.k}"/><path d="M78 22 Q112 9 150 8" stroke="#fff" stroke-opacity=".35" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+    if(p==="Francés")s+=`<path d="M96 26 l20 -10 M140 21 l20 -10 M184 26 l20 -10" stroke="${b.d}" stroke-width="4" stroke-linecap="round" fill="none"/>`;
+    if(p==="Integral")s+=seeds([[90,22],[118,14],[150,11],[182,15],[212,23],[132,28],[170,30],[105,34],[198,34]]);
+    return s},
+  lechuga:()=>`<path d="M38 7 q7 -9 14 0 ${R("t14 0 ",15)} V14 H38Z" fill="#6DBE45" stroke="#4E9A2F" stroke-width="1.5"/>`,
+  tomate:()=>[48,118,188].map(x=>`<rect x="${x}" y="0" width="64" height="10" rx="5" fill="#E04A2F"/><ellipse cx="${x+20}" cy="5" rx="3" ry="1.6" fill="#F7B39B"/><ellipse cx="${x+44}" cy="5" rx="3" ry="1.6" fill="#F7B39B"/>`).join(""),
+  mila:()=>`<rect x="34" y="0" width="232" height="18" rx="9" fill="#C27C2C"/><rect x="40" y="2" width="220" height="7" rx="3.5" fill="#DDA052" opacity=".8"/>`+Array.from({length:15},(_,i)=>`<circle cx="${50+i*14.5}" cy="${4+(i%3)*4}" r="1.4" fill="#8E5518"/>`).join(""),
+  lomo:()=>`<rect x="38" y="0" width="224" height="16" rx="8" fill="#7B3A22"/>`+Array.from({length:7},(_,i)=>`<path d="M${74+i*26} 3 l-10 10" stroke="#45200F" stroke-width="3" stroke-linecap="round"/>`).join(""),
+  pollo:()=>`<rect x="38" y="0" width="224" height="16" rx="8" fill="#E3B575"/><rect x="46" y="2" width="208" height="5" rx="2.5" fill="#F0CE97"/>`+Array.from({length:7},(_,i)=>`<path d="M${74+i*26} 3 l-10 10" stroke="#A86F36" stroke-width="3" stroke-linecap="round"/>`).join(""),
+  jamon:()=>`<path d="M40 2 q10 -4 20 0 ${R("t20 0 ",10)} V9 q-10 4 -20 0 ${R("t-20 0 ",10)}Z" fill="#EE9CA7" stroke="#D97C89" stroke-width="1"/>`,
+  queso:()=>`<path d="M42 0 H258 V6 H230 q-4 10 -8 0 H180 q-5 12 -10 0 H120 q-4 9 -8 0 H70 q-4 10 -8 0 H42Z" fill="#F6C744"/>`,
+  vege:()=>[62,106,150,194,238].map((x,i)=>i%2
+    ?`<rect x="${x-20}" y="2" width="40" height="9" rx="4.5" fill="#D9442B"/>`
+    :`<ellipse cx="${x}" cy="7" rx="22" ry="6" fill="#5E9B3A"/><ellipse cx="${x}" cy="7" rx="17" ry="3.5" fill="#CDE3A0"/>`).join(""),
+  huevo:()=>`<path d="M70 6 Q72 -1 110 1 Q150 -2 190 1 Q230 -1 232 6 Q232 12 150 12 Q68 12 70 6Z" fill="#FFF9EE" stroke="#EADFC8"/><circle cx="150" cy="5" r="8" fill="#F2A900"/><circle cx="147" cy="3" r="2.2" fill="#fff" opacity=".6"/>`,
+  mayonesa:()=>`<path d="M48 3 q10 -5 20 0 ${R("t20 0 ",9)}" fill="none" stroke="#FFF2C2" stroke-width="4" stroke-linecap="round"/>`,
+  ketchup:()=>`<path d="M52 3 q10 -5 20 0 ${R("t20 0 ",9)}" fill="none" stroke="#C8261B" stroke-width="4" stroke-linecap="round"/>`,
+  mostaza:()=>`<path d="M44 3 q10 -5 20 0 ${R("t20 0 ",9)}" fill="none" stroke="#E8B51A" stroke-width="4" stroke-linecap="round"/>`
+};
+const H={lechuga:12,tomate:10,mila:18,lomo:16,pollo:16,jamon:8,queso:7,vege:13,huevo:12,mayonesa:5,ketchup:5,mostaza:5};
+const PROT={mila:["mila"],lomo:["lomo"],pollo:["pollo"],jyq:["jamon","queso"],vege:["vege"]};
+
+function plan(st){
+  if(!st)return[];
+  const has=a=>st.ags.includes(a),L=[],arabe=st.pan==="Árabe";
+  L.push({k:"panB:"+st.pan,t:"panB",p:st.pan,h:arabe?12:24});
+  if(has("Lechuga"))L.push({k:"lechuga",t:"lechuga"});
+  PROT[st.id].forEach(t=>L.push({k:t,t}));
+  ["Huevo","Tomate","Mayonesa","Ketchup","Mostaza"].forEach(a=>{if(has(a)){const t=a.toLowerCase();L.push({k:t,t})}});
+  L.push({k:"panT:"+st.pan,t:"panT",p:st.pan,h:arabe?12:46});
+  L.forEach(l=>{if(l.h==null)l.h=H[l.t]});
+  return L;
+}
+
+function drawSandwich(st){
+  current=st;if(sending)return;
+  const L=plan(st),keep=new Set(L.map(l=>l.k));
+  for(const[k,g]of layers)if(!keep.has(k)){
+    layers.delete(k);const d=g.firstChild;d.classList.remove("in");d.classList.add("out");
+    d.addEventListener("animationend",()=>g.remove(),{once:true});
+  }
+  let y=BASE;const ys=L.map(l=>{y-=l.h;const t=y;y+=1;return t});
+  const fresh=[];let next=null;
+  for(let i=L.length-1;i>=0;i--){
+    const l=L[i];let g=layers.get(l.k);
+    if(!g){
+      g=document.createElementNS(NS,"g");g.setAttribute("class","layer");
+      g.style.transform=`translateY(${ys[i]}px)`;
+      const d=document.createElementNS(NS,"g");d.setAttribute("class","drop in");d.innerHTML=DRAW[l.t](l.p);
+      g.appendChild(d);stack.insertBefore(g,next);layers.set(l.k,g);fresh.unshift(d);
+    }else g.style.transform=`translateY(${ys[i]}px)`;
+    next=g;
+  }
+  fresh.forEach((d,i)=>{d.style.animationDelay=i*80+"ms";
+    d.addEventListener("animationend",()=>{d.classList.remove("in");d.style.animationDelay=""},{once:true})});
+  ghost.style.opacity=L.length?0:"";
+}
+function sendOff(){
+  if(!layers.size)return;
+  sending=true;stack.classList.add("sent");
+  setTimeout(()=>{stack.innerHTML="";layers.clear();stack.classList.remove("sent");sending=false;drawSandwich(current)},560);
+}
+
+/* ---------- Lista de sándwiches ---------- */
+let active=null;const items=new Map();
+function stateOf(el,s){
+  return{id:s.id,name:s.name,pan:el.querySelector(`input[name="pan-${s.id}"]:checked`).value,
+    ags:[...el.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.value)};
+}
+function refresh(){
+  const st=active?stateOf(active.el,active.s):null;
+  drawSandwich(st);
+  const name=st?st.name:"Elegí un sándwich",
+    meta=st?`Pan ${st.pan.toLowerCase()} · ${st.ags.length?st.ags.join(", "):"sin agregados"}`:"Tocá uno de la lista y miralo armarse acá.";
+  document.getElementById("pvName").textContent=name;
+  document.getElementById("pvMeta").textContent=meta;
+  sv.setAttribute("aria-label",st?`${name}: ${meta}`:"Todavía no elegiste un sándwich");
+}
 
 SANDWICHES.forEach(s=>{
   const el=document.createElement("div");el.className="item";
@@ -150,18 +290,26 @@ SANDWICHES.forEach(s=>{
     </div>
   </div>`;
   const head=el.querySelector(".head"),panel=el.querySelector(".panel"),out=el.querySelector("output");
-  head.onclick=()=>{const o=panel.hidden;panel.hidden=!o;el.classList.toggle("open",o);head.setAttribute("aria-expanded",o)};
+  items.set(el,{el,s});
+  head.onclick=()=>{
+    const o=panel.hidden;panel.hidden=!o;el.classList.toggle("open",o);head.setAttribute("aria-expanded",o);
+    if(o)active={el,s};
+    else if(active&&active.el===el){const other=[...list.querySelectorAll(".item.open")].pop();active=other?items.get(other):null}
+    refresh();
+  };
+  panel.addEventListener("change",()=>{active={el,s};refresh()});
   el.querySelectorAll(".qty button").forEach(b=>b.onclick=()=>{out.value=Math.max(1,Math.min(20,+out.value+ +b.dataset.d))});
   el.querySelector(".add").onclick=()=>{
-    const pan=el.querySelector(`input[name="pan-${s.id}"]:checked`).value;
-    const ags=[...el.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.value);
-    cart.push({name:s.name,pan,ags,qty:+out.value});
+    const st=stateOf(el,s);
+    cart.push({name:s.name,pan:st.pan,ags:st.ags,qty:+out.value});
+    if(active&&active.el===el)sendOff();
     el.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);out.value=1;
     head.click();render();
   };
   list.appendChild(el);
 });
 
+/* ---------- Pedido ---------- */
 function render(){
   const ul=document.getElementById("cart");ul.innerHTML="";
   cart.forEach((c,i)=>{
